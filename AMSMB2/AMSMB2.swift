@@ -296,6 +296,29 @@ public class AMSMB2: NSObject, NSSecureCoding, Codable, CustomReflectable {
         
     }
     
+    @objc
+    open func listShares2(enumerateHidden: Bool = false, completionHandler: @escaping (_ names: [String], _ comments: [String], _ error: Error?) -> Void) {
+        q.async {
+            do {
+                let context = try SMB2Context(timeout: self.timeout)
+                self.initContext(context)
+                try context.connect(server: self.url.host!, share: "IPC$", user: self._user)
+                defer {
+                    try? context.disconnect()
+                }
+                var shares = try context.shareEnum()
+                if enumerateHidden {
+                    shares = shares.filter { $0.type & 0x0fffffff == SHARE_TYPE_DISKTREE }
+                } else {
+                    shares = shares.filter { $0.type == SHARE_TYPE_DISKTREE }
+                }
+                completionHandler(shares.map({ $0.name }), shares.map({ $0.comment }), nil)
+            } catch {
+                completionHandler([], [], error)
+            }
+        }
+    }
+    
     /**
      Enumerates directory contents in the give path.
      
