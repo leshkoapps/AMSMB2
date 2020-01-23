@@ -323,6 +323,14 @@ typedef uint8_t smb2_file_id[SMB2_FD_SIZE];
 struct smb2fh;
 smb2_file_id *smb2_get_file_id(struct smb2fh *fh);
 
+/*
+ * This creates a new smb2fh based on fileid.
+ * Free it with smb2_close_async()
+ */
+struct smb2_context;
+struct smb2fh *smb2_fh_from_file_id(struct smb2_context *smb2,
+                                    smb2_file_id *fileid);
+
 struct smb2_create_reply {
         uint8_t oplock_level;
         uint8_t flags;
@@ -775,12 +783,32 @@ struct smb2_query_info_reply {
 #define SMB2_FSCTL_LMR_REQUEST_RESILIENCY       0x001401D4
 #define SMB2_FSCTL_QUERY_NETWORK_INTERFACE_INFO 0x001401FC
 #define SMB2_FSCTL_SET_REPARSE_POINT            0x000900A4
+#define SMB2_FSCTL_GET_REPARSE_POINT            0X000900A8
 #define SMB2_FSCTL_DFS_GET_REFERRALS_EX         0x000601B0
 #define SMB2_FSCTL_FILE_LEVEL_TRIM              0x00098208
 #define SMB2_FSCTL_VALIDATE_NEGOTIATE_INFO      0x00140204
 
 /* Flags */
 #define SMB2_0_IOCTL_IS_FSCTL                   0x00000001
+
+#define SMB2_SYMLINK_FLAG_RELATIVE 0x00000001
+struct smb2_symlink_reparse_buffer {
+        uint32_t flags;
+        char *subname;
+        char *printname;
+};
+
+#define SMB2_REPARSE_TAG_SYMLINK                0xa000000c
+/*
+ * Reparse_data_buffer
+ */
+struct smb2_reparse_data_buffer {
+        uint32_t reparse_tag;
+        uint16_t reparse_data_length;
+        union {
+                struct smb2_symlink_reparse_buffer symlink;
+        };
+};
 
 struct smb2_ioctl_request {
         uint32_t ctl_code;
@@ -833,6 +861,8 @@ struct smb2_write_reply {
 
 #define SMB2_TREE_DISCONNECT_REQUEST_SIZE 4
 #define SMB2_TREE_DISCONNECT_REPLY_SIZE 4
+
+#define SMB_ENCRYPTION_AES128_CCM     0x0001
 
 #ifdef __cplusplus
 }

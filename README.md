@@ -61,67 +61,74 @@ import AMSMB2
 
 class SMBClient {
     /// connect to: `smb://guest@XXX.XXX.XX.XX/share`
-
+    
     let serverURL = URL(string: "smb://XXX.XXX.XX.XX")!
     let credential = URLCredential(user: "guest", password: "", persistence: URLCredential.Persistence.forSession)
     let share = "share"
     
-    func connect(handler: @escaping (_ client: AMSMB2?, _ error: Error?) -> Void) {
-        let client = AMSMB2(url: self.serverURL, credential: self.credential)!
+    lazy private var client = AMSMB2(url: self.serverURL, credential: self.credential)!
+    
+    private func connect(handler: @escaping (Result<AMSMB2, Error>) -> Void) {
+        // AMSMB2 can handle queueing connection requests
         client.connectShare(name: self.share) { error in
-            handler(client, error)
+            if let error = error {
+                handler(.failure(error))
+            } else {
+                handler(.success(self.client))
+            }
         }
     }
     
     func listDirectory(path: String) {
-        connect { (client, error) in
-            if let error = error {
-                print(error)
-                return
-            }
-            
-            client?.contentOfDirectory(atPath: path,
-                                       completionHandler: { (files, error) in
-                if let error = error {
-                    print(error)
-                    return
+        connect { result in
+            switch result {
+            case .success(let client):
+                client.contentsOfDirectory(atPath: path) { result in
+                    switch result {
+                    case .success(let files):
+                        for entry in files {
+                            print("name:", entry[.nameKey] as! String,
+                                  ", path:", entry[.pathKey] as! String,
+                                  ", type:", entry[.fileResourceTypeKey] as! URLFileResourceType,
+                                  ", size:", entry[.fileSizeKey] as! Int64,
+                                  ", modified:", entry[.contentModificationDateKey] as! Date,
+                                  ", created:", entry[.creationDateKey] as! Date)
+                        }
+                        
+                    case .failure(let error):
+                        print(error)
+                    }
                 }
                 
-                for entry in files {
-                    print("name: ", entry[.nameKey] as! String,
-                        ", path: ", entry[.pathKey],
-                        ", type: ", entry[.fileResourceTypeKey] as? URLFileResourceType,
-                        ", size: ", entry[.fileSizeKey] as? Int64,
-                        ", modified: ", entry[.contentModificationDateKey],
-                        ", created: ", entry[.creationDateKey]
-                    )
-                }
-            })
+            case .failure(let error):
+                print(error)
+            }
         }
     }
     
     func moveItem(path: String, to toPath: String) {
-        self.connect { (client, error) in
-            if let error = error {
-                print(error)
-                return
-            }
-            
-            client?.moveItem(atPath: path, toPath: toPath) { error in
-                if let error = error {
-                    print(error)
-                } else {
-                    print("\(path) moved successfully.")
-                }
-                
-                // Disconnecting is optional, it will be called eventually
-                // when `AMSMB2` object is freed.
-                // You may call it explicitly to detect errors.
-                client?.disconnectShare(completionHandler: { (error) in
+        self.connect { result in
+            switch result {
+            case .success(let client):
+                client.moveItem(atPath: path, toPath: toPath) { error in
                     if let error = error {
                         print(error)
+                    } else {
+                        print("\(path) moved successfully.")
                     }
-                })
+                    
+                    // Disconnecting is optional, it will be called eventually
+                    // when `AMSMB2` object is freed.
+                    // You may call it explicitly to detect errors.
+                    client.disconnectShare(completionHandler: { (error) in
+                        if let error = error {
+                            print(error)
+                        }
+                    })
+                }
+                
+            case .failure(let error):
+                print(error)
             }
         }
     }
@@ -135,7 +142,7 @@ While source code shipped with project is MIT licensed, but it has static link t
 You **must** link this library dynamically to your app if you intend to distribute your app on App Store.
 
 [cocoapods]: https://cocoapods.org/pods/AMSMB2
-[swift-image]: https://img.shields.io/badge/swift-4.1-orange.svg
+[swift-image]: https://img.shields.io/badge/swift-5.0-orange.svg
 [swift-url]: https://swift.org/
 [platform-image]: https://img.shields.io/cocoapods/p/AMSMB2.svg
 [license-image]: https://img.shields.io/github/license/amosavian/AMSMB2.svg

@@ -16,7 +16,7 @@ Pod::Spec.new do |s|
   #
 
   s.name         = "AMSMB2"
-  s.version      = "1.7.0"
+  s.version      = "2.6.0"
   s.summary      = "Swift framework to connect SMB2/3 shares"
 
   # This description is used to generate tags and improve search results.
@@ -67,7 +67,7 @@ Pod::Spec.new do |s|
   # s.platform     = :ios, "5.0"
 
   #  When using multiple platforms
-  s.swift_version = "4.1"
+  s.swift_version = "5.0"
   s.ios.deployment_target = "9.0"
   s.osx.deployment_target = "10.11"
   s.tvos.deployment_target = "9.0"
@@ -96,6 +96,7 @@ Pod::Spec.new do |s|
   s.tvos.vendored_libraries = "libsmb2/lib/libsmb2-tvos.a"
   s.watchos.vendored_libraries = "libsmb2/lib/libsmb2-watchos.a"
   s.source_files  = "AMSMB2/**/*.swift"
+  s.pod_target_xcconfig = { 'LIBRARY_SEARCH_PATHS' => "$(PODS_TARGET_SRCROOT)/libsmb2/lib", 'SWIFT_INCLUDE_PATHS' => "${PODS_TARGET_SRCROOT}/libsmb2/**" }
   s.xcconfig = { 'LIBRARY_SEARCH_PATHS' => "$(PODS_ROOT)/AMSMB2/libsmb2/lib", 'SWIFT_INCLUDE_PATHS' => "${PODS_ROOT}/AMSMB2/libsmb2/**" }
   #s.exclude_files = "AMSMB2/Exclude"
   # s.public_header_files = "libsmb2/include/**/*.h"
@@ -112,7 +113,7 @@ Pod::Spec.new do |s|
   # s.resource  = "icon.png"
   # s.resources = "Resources/*.png"
 
-  s.preserve_paths = "libsmb2/include/module.modulemap", "libsmb2/include/libsmb2-private.h", "libsmb2/include/smb2/libsmb2-raw.h", "libsmb2/include/smb2/libsmb2.h", "libsmb2/include/smb2/smb2-errors.h", "libsmb2/include/smb2/smb2.h"
+  s.preserve_paths = "libsmb2/include/**"
 
 
   # ――― Project Linking ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――― #
